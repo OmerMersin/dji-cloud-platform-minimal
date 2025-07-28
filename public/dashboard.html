@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DJI Cloud API Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 300;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.8);
+            font-size: 1.1rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .config-display {
+            display: grid;
+            gap: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .config-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+
+        .config-label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .config-value {
+            color: #6c757d;
+            word-break: break-all;
+        }
+
+        .config-value.masked {
+            color: #28a745;
+        }
+
+        .config-value.loading {
+            color: #ffc107;
+        }
+
+        .config-value.error {
+            color: #dc3545;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #6c757d;
+            border: 2px solid #e9ecef;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .status-indicators {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status-loading {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .logs-container {
+            grid-column: 1 / -1;
+        }
+
+        .logs {
+            background: #2c3e50;
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            color: #ecf0f1;
+            line-height: 1.6;
+        }
+
+        .logs::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .logs::-webkit-scrollbar-track {
+            background: #34495e;
+            border-radius: 4px;
+        }
+
+        .logs::-webkit-scrollbar-thumb {
+            background: #7f8c8d;
+            border-radius: 4px;
+        }
+
+        .log-entry {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            background: rgba(52, 73, 94, 0.3);
+        }
+
+        .log-timestamp {
+            color: #95a5a6;
+            font-size: 0.9em;
+        }
+
+        .log-message {
+            margin-left: 10px;
+        }
+
+        .log-success { border-left: 3px solid #27ae60; }
+        .log-error { border-left: 3px solid #e74c3c; }
+        .log-info { border-left: 3px solid #3498db; }
+        .log-warning { border-left: 3px solid #f39c12; }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                flex: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>DJI Cloud API Dashboard</h1>
+            <p>Manage your DJI Cloud connections and monitor device status</p>
+        </div>
+
+        <div id="config-error" class="alert alert-error" style="display: none;">
+            <strong>⚠️ Configuration Error:</strong> <span id="error-message"></span>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="card">
+                <h2>🔧 Configuration</h2>
+                <div class="config-display">
+                    <div class="config-item">
+                        <span class="config-label">App ID:</span>
+                        <span class="config-value loading" id="display-app-id">Loading...</span>
+                    </div>
+                    <div class="config-item">
+                        <span class="config-label">App Key:</span>
+                        <span class="config-value loading" id="display-app-key">Loading...</span>
+                    </div>
+                    <div class="config-item">
+                        <span class="config-label">License:</span>
+                        <span class="config-value loading" id="display-license">Loading...</span>
+                    </div>
+                    <div class="config-item">
+                        <span class="config-label">MQTT Host:</span>
+                        <span class="config-value loading" id="display-mqtt-host">Loading...</span>
+                    </div>
+                    <div class="config-item">
+                        <span class="config-label">Username:</span>
+                        <span class="config-value loading" id="display-username">Loading...</span>
+                    </div>
+                    <div class="config-item">
+                        <span class="config-label">Password:</span>
+                        <span class="config-value loading" id="display-password">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>🚀 Control Panel</h2>
+                <div class="status-indicators">
+                    <div id="platform-status" class="status-badge status-disconnected">Platform Disconnected</div>
+                    <div id="thing-status" class="status-badge status-disconnected">Thing Disconnected</div>
+                </div>
+                <div class="button-group">
+                    <button id="login-button" class="btn btn-primary" disabled>🔐 Connect</button>
+                    <button id="logout-button" class="btn btn-danger" disabled>🔓 Disconnect</button>
+                    <button id="status-button" class="btn btn-secondary" disabled>📊 Status</button>
+                    <button id="clear-logs" class="btn btn-secondary">🗑️ Clear Logs</button>
+                </div>
+            </div>
+
+            <div class="card logs-container">
+                <h2>📋 System Logs</h2>
+                <div id="logs" class="logs"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let CONFIG = null;
+
+        // DOM elements
+        const elements = {
+            logs: document.getElementById('logs'),
+            platformStatus: document.getElementById('platform-status'),
+            thingStatus: document.getElementById('thing-status'),
+            configError: document.getElementById('config-error'),
+            errorMessage: document.getElementById('error-message'),
+            loginBtn: document.getElementById('login-button'),
+            logoutBtn: document.getElementById('logout-button'),
+            statusBtn: document.getElementById('status-button')
+        };
+
+        // Logging functionality
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.innerHTML = `
+                <span class="log-timestamp">[${timestamp}]</span>
+                <span class="log-message">${message}</span>
+            `;
+            elements.logs.appendChild(logEntry);
+            elements.logs.scrollTop = elements.logs.scrollHeight;
+        }
+
+        // Status update functions
+        function updatePlatformStatus(isVerified) {
+            elements.platformStatus.textContent = isVerified ? 'Platform Connected' : 'Platform Disconnected';
+            elements.platformStatus.className = `status-badge ${isVerified ? 'status-connected' : 'status-disconnected'}`;
+        }
+
+        function updateThingStatus(state) {
+            const isConnected = state === 'connected' || state === 1;
+            elements.thingStatus.textContent = isConnected ? 'Thing Connected' : 'Thing Disconnected';
+            elements.thingStatus.className = `status-badge ${isConnected ? 'status-connected' : 'status-disconnected'}`;
+        }
+
+        // Load configuration from backend
+        async function loadConfiguration() {
+            try {
+                log('🔄 Loading configuration from server...', 'info');
+                const response = await fetch('/api/config');
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+                
+                CONFIG = await response.json();
+                updateConfigDisplay();
+                enableButtons();
+                elements.configError.style.display = 'none';
+                log('✅ Configuration loaded successfully', 'success');
+                
+            } catch (error) {
+                log(`❌ Failed to load configuration: ${error.message}`, 'error');
+                showConfigError(`Failed to load configuration: ${error.message}`);
+                updateConfigDisplayError();
+            }
+        }
+
+        function showConfigError(message) {
+            elements.errorMessage.textContent = message;
+            elements.configError.style.display = 'block';
+        }
+
+        function enableButtons() {
+            elements.loginBtn.disabled = false;
+            elements.logoutBtn.disabled = false;
+            elements.statusBtn.disabled = false;
+        }
+
+        function updateConfigDisplay() {
+            if (!CONFIG) return;
+            
+            document.getElementById('display-app-id').textContent = CONFIG.appId;
+            document.getElementById('display-app-id').className = 'config-value';
+            
+            document.getElementById('display-app-key').textContent = '•'.repeat(20) + ' (configured)';
+            document.getElementById('display-app-key').className = 'config-value masked';
+            
+            document.getElementById('display-license').textContent = '•'.repeat(20) + ' (configured)';
+            document.getElementById('display-license').className = 'config-value masked';
+            
+            document.getElementById('display-mqtt-host').textContent = CONFIG.mqttHost;
+            document.getElementById('display-mqtt-host').className = 'config-value';
+            
+            document.getElementById('display-username').textContent = CONFIG.username;
+            document.getElementById('display-username').className = 'config-value';
+            
+            document.getElementById('display-password').textContent = '•'.repeat(12) + ' (configured)';
+            document.getElementById('display-password').className = 'config-value masked';
+        }
+
+        function updateConfigDisplayError() {
+            const fields = ['display-app-id', 'display-app-key', 'display-license', 'display-mqtt-host', 'display-username', 'display-password'];
+            fields.forEach(fieldId => {
+                const element = document.getElementById(fieldId);
+                element.textContent = 'Error loading';
+                element.className = 'config-value error';
+            });
+        }
+
+        // Callback function for DJI Bridge
+        function reg_callback() {
+            log(`Connection callback triggered with arguments: ${Array.from(arguments).join(', ')}`, 'info');
+            updateConnectionStatus();
+        }
+
+        function updateConnectionStatus() {
+            if (window.djiBridge) {
+                try {
+                    const platformVerified = window.djiBridge.platformIsVerified();
+                    const thingState = window.djiBridge.thingGetConnectState();
+                    
+                    updatePlatformStatus(platformVerified);
+                    updateThingStatus(thingState);
+                } catch (error) {
+                    log(`Error checking status: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // Event listeners
+        elements.loginBtn.addEventListener('click', function() {
+            if (!CONFIG) {
+                log('❌ Configuration not loaded', 'error');
+                return;
+            }
+
+            if (!window.djiBridge) {
+                log('❌ DJI Bridge not available. Make sure you are running this in the DJI environment.', 'error');
+                return;
+            }
+
+            try {
+                log('🔐 Initiating connection...', 'info');
+                
+                // Verify platform license
+                const token = window.djiBridge.platformVerifyLicense(
+                    CONFIG.appId,
+                    CONFIG.appKey,
+                    CONFIG.license
+                );
+                
+                const platformVerified = window.djiBridge.platformIsVerified();
+                log(`Platform verification: ${platformVerified ? '✅ Success' : '❌ Failed'}`, 
+                    platformVerified ? 'success' : 'error');
+                updatePlatformStatus(platformVerified);
+
+                if (!platformVerified) {
+                    log('❌ Platform verification failed. Check your credentials.', 'error');
+                    return;
+                }
+
+                // Load and configure thing component
+                const registerParams = JSON.stringify({
+                    host: CONFIG.mqttHost,
+                    connectCallback: "reg_callback",
+                    username: CONFIG.username,
+                    password: CONFIG.password,
+                });
+
+                const componentLoaded = window.djiBridge.platformLoadComponent("thing", registerParams);
+                log(`Component loading: ${componentLoaded ? '✅ Success' : '❌ Failed'}`, 
+                    componentLoaded ? 'success' : 'error');
+
+                // Connect to thing
+                const connectionResult = window.djiBridge.thingConnect(
+                    CONFIG.username, 
+                    CONFIG.password, 
+                    "reg_callback"
+                );
+                log(`Thing connection initiated: ${connectionResult ? '✅ Success' : '❌ Failed'}`, 
+                    connectionResult ? 'success' : 'warning');
+
+                // Update status
+                setTimeout(updateConnectionStatus, 1000);
+                
+            } catch (error) {
+                log(`❌ Connection error: ${error.message}`, 'error');
+            }
+        });
+
+        elements.logoutBtn.addEventListener('click', function() {
+            if (!window.djiBridge) {
+                log('❌ DJI Bridge not available', 'error');
+                return;
+            }
+
+            try {
+                log('🔓 Disconnecting...', 'info');
+                const result = window.djiBridge.platformUnloadComponent("thing");
+                log(`Disconnection: ${result ? '✅ Success' : '❌ Failed'}`, 
+                    result ? 'success' : 'error');
+                
+                updatePlatformStatus(false);
+                updateThingStatus(false);
+                
+            } catch (error) {
+                log(`❌ Disconnection error: ${error.message}`, 'error');
+            }
+        });
+
+        elements.statusBtn.addEventListener('click', function() {
+            if (!window.djiBridge) {
+                log('❌ DJI Bridge not available', 'error');
+                return;
+            }
+
+            try {
+                const platformVerified = window.djiBridge.platformIsVerified();
+                const componentLoaded = window.djiBridge.platformIsComponentLoaded("thing");
+                const thingState = window.djiBridge.thingGetConnectState();
+                
+                log('📊 System Status Report:', 'info');
+                log(`  Platform Verified: ${platformVerified ? '✅' : '❌'}`, 'info');
+                log(`  Component Loaded: ${componentLoaded ? '✅' : '❌'}`, 'info');
+                log(`  Thing State: ${thingState}`, 'info');
+                
+                updatePlatformStatus(platformVerified);
+                updateThingStatus(thingState);
+                
+            } catch (error) {
+                log(`❌ Status check error: ${error.message}`, 'error');
+            }
+        });
+
+        document.getElementById('clear-logs').addEventListener('click', function() {
+            elements.logs.innerHTML = '';
+            log('🗑️ Logs cleared', 'info');
+        });
+
+        // Initialize
+        log('🚀 DJI Cloud API Dashboard initialized', 'success');
+        loadConfiguration();
+        
+        // Check initial status if DJI Bridge is available
+        if (window.djiBridge) {
+            updateConnectionStatus();
+        } else {
+            log('⚠️ DJI Bridge not detected. Make sure you are running in the correct environment.', 'warning');
+        }
+    </script>
+</body>
+</html>
