@@ -61,7 +61,7 @@ This project consists of two main components:
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/OmerMersin/dji-cloud-platform.git
+   git clone https://github.com/OmerMersin/dji-cloud-platform-minimal.git
    cd dji-cloud-platform
    ```
 2. (Optional) Create and activate a virtual environment:
@@ -165,4 +165,4 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 ## Contact
 
 * **Author**: Omer Mersin ([omermersin02@gmail.com](omermersin02@gmail.com))
-* **GitHub**: [https://github.com/OmerMersin/dji-cloud-platform](https://https://github.com/OmerMersin/dji-cloud-platform)
+* **GitHub**: [https://github.com/OmerMersin/dji-cloud-platform-minimal](https://https://github.com/OmerMersin/dji-cloud-platform-minimal)
